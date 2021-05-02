@@ -2,9 +2,20 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#define BIN_PATH "/bin"
-#define USR_BIN_PATH "/usr/bin"
-#define BUFF 50
+#include "gnsh.h"
+
+char **
+createArgs(char *line)
+{
+  char *temp_string = NULL;
+  char *separated_string = strdup(line);
+  char **command_args = (char **)malloc(BUFF * sizeof(char *));
+  for (int i = 0; (temp_string = strsep(&separated_string, " \t")) != NULL; i++)
+    command_args[i] = temp_string;
+  free(temp_string);
+  free(separated_string);
+  return command_args;
+}
 
 int
 main(int argc, char *argv[])
@@ -27,14 +38,8 @@ main(int argc, char *argv[])
         continue;
 
       char *command;
-      char *temp_string = NULL;
-      char *separated_string = strdup(line);
-      char **command_args = (char **)malloc(BUFF * sizeof(char *));
-      for (int i = 0; (temp_string = strsep(&separated_string, " \t")) != NULL; i++)
-        command_args[i] = temp_string;
+      char **command_args = createArgs(line);
       command = strdup(command_args[0]);
-      free(temp_string);
-      free(separated_string);
 
       char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
       sprintf(bin_path, "%s/%s", BIN_PATH, command);
