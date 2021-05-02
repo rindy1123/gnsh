@@ -22,14 +22,14 @@ void execCommand(char *path, char **command_args)
   pid_t pid = fork();
   if (pid < 0)
   {
-    fprintf(stderr, "error occurs");
+    fprintf(stderr, "error occured\n");
     exit(1);
   }
   else if (pid == 0)
   {
     if (execv(path, command_args) == -1)
     {
-      fprintf(stderr, "error occurs");
+      fprintf(stderr, "error occured\n");
       exit(1);
     }
   }
@@ -70,24 +70,19 @@ int main(int argc, char *argv[])
         free(bin_path);
         continue;
       }
+      free(bin_path);
       char *usr_bin_path = (char *)malloc(strlen(command) + strlen(USR_BIN_PATH) + 1);
       sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, command);
       if (access(usr_bin_path, X_OK) == 0)
       {
-        fprintf(out, "%s\n", usr_bin_path);
-        free(bin_path);
+        execCommand(usr_bin_path, command_args);
         free(usr_bin_path);
         continue;
       }
-      if (strcmp(command, "exit") == 0)
-      {
-        free(usr_bin_path);
-        free(bin_path);
-        return 0;
-      }
-      fprintf(stderr, "gnsh: Unknown command: %s\n", command);
       free(usr_bin_path);
-      free(bin_path);
+      if (strcmp(command, "exit") == 0)
+        return 0;
+      fprintf(stderr, "gnsh: Unknown command: %s\n", command);
     }
   }
 
