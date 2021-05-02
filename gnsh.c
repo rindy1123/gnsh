@@ -95,8 +95,24 @@ int main(int argc, char *argv[])
 
       char **command_args = createArgs(line);
       char *command = strdup(command_args[0]);
+      // built-in commands
       if (strcmp(command, "exit") == 0)
         return 0;
+      else if (strcmp(command, "cd") == 0)
+      {
+        if (command_args[2] != NULL)
+        {
+          fprintf(stderr, "Too many arguments\n");
+          continue;
+        }
+        else if (command_args[1] == NULL)
+        {
+          fprintf(stderr, "Specify a path to the directory\n");
+          continue;
+        }
+        printf("%s\n", command_args[1]);
+        continue;
+      }
 
       int result = handleInput(command, command_args);
       if (result == 0)
