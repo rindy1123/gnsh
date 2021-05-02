@@ -17,8 +17,29 @@ createArgs(char *line)
   return command_args;
 }
 
-int
-main(int argc, char *argv[])
+void execCommand(char *path, char **command_args)
+{
+  pid_t pid = fork();
+  if (pid < 0)
+  {
+    fprintf(stderr, "error occurs");
+    exit(1);
+  }
+  else if (pid == 0)
+  {
+    if (execv(path, command_args) == -1)
+    {
+      fprintf(stderr, "error occurs");
+      exit(1);
+    }
+  }
+  else
+  {
+    waitpid(pid, NULL, 0);
+  }
+}
+
+int main(int argc, char *argv[])
 {
   FILE *in;
   FILE *out;
@@ -45,26 +66,9 @@ main(int argc, char *argv[])
       sprintf(bin_path, "%s/%s", BIN_PATH, command);
       if (access(bin_path, X_OK) == 0)
       {
-        pid_t pid = fork();
-        if (pid < 0)
-        {
-          fprintf(stderr, "error occurs");
-          exit(1);
-        }
-        else if (pid == 0)
-        {
-          if (execv(bin_path, command_args) == -1)
-          {
-            fprintf(stderr, "error occurs");
-            exit(1);
-          }
-        }
-        else
-        {
-          waitpid(pid, NULL, 0);
-          free(bin_path);
-          continue;
-        }
+        execCommand(bin_path, command_args);
+        free(bin_path);
+        continue;
       }
       char *usr_bin_path = (char *)malloc(strlen(command) + strlen(USR_BIN_PATH) + 1);
       sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, command);
