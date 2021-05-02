@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
       {
         if (command_args[2] != NULL)
         {
-          fprintf(stderr, "Too many arguments\n");
+          fprintf(stderr, "Too many args for cd command\n");
           continue;
         }
         else if (command_args[1] == NULL)
@@ -110,7 +110,11 @@ int main(int argc, char *argv[])
           fprintf(stderr, "Specify a path to the directory\n");
           continue;
         }
-        printf("%s\n", command_args[1]);
+        if (chdir(command_args[1]) == -1)
+        {
+          fprintf(stderr, "cd: The directory '%s' does not exist\n", command_args[1]);
+          continue;
+        }
         continue;
       }
 
