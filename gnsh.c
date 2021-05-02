@@ -39,6 +39,11 @@ void execCommand(char *path, char **command_args)
   }
 }
 
+void warnUnknownCommand(char *command)
+{
+  fprintf(stderr, "gnsh: Unknown command: %s\n", command);
+}
+
 int main(int argc, char *argv[])
 {
   FILE *in;
@@ -82,7 +87,7 @@ int main(int argc, char *argv[])
       free(usr_bin_path);
       if (strcmp(command, "exit") == 0)
         return 0;
-      fprintf(stderr, "gnsh: Unknown command: %s\n", command);
+      warnUnknownCommand(command);
     }
   }
   else if (argc == 2)
@@ -116,7 +121,7 @@ int main(int argc, char *argv[])
         continue;
       }
       free(usr_bin_path);
-      fprintf(stderr, "gnsh: Unknown command: %s\n", command);
+      warnUnknownCommand(command);
     }
   }
   else

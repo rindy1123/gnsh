@@ -4,3 +4,4 @@
 
 char **createArgs(char *line);
 void execCommand(char *path, char **command_args);
+void warnUnknownCommand(char *command);
