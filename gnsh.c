@@ -58,9 +58,8 @@ int main(int argc, char *argv[])
       if (strcmp(line, "\0") == 0)
         continue;
 
-      char *command;
       char **command_args = createArgs(line);
-      command = strdup(command_args[0]);
+      char *command = strdup(command_args[0]);
 
       char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
       sprintf(bin_path, "%s/%s", BIN_PATH, command);
