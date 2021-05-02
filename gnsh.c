@@ -24,6 +24,7 @@ main(int argc, char *argv[])
       line[strcspn(line, "\n")] = 0;
       if (strcmp(line, "\0") == 0)
         continue;
+
       char *bin_path = (char *)malloc(strlen(line) + strlen(BIN_PATH) + 1);
       sprintf(bin_path, "%s/%s", BIN_PATH, line);
       if (access(bin_path, X_OK) == 0)
@@ -37,10 +38,15 @@ main(int argc, char *argv[])
         else
         {
           if (strcmp(line, "exit") == 0)
+          {
+            free(usr_bin_path);
             return 0;
+          }
           fprintf(stderr, "gnsh: Unknown command: %s\n", line);
         }
+        free(usr_bin_path);
       }
+      free(bin_path);
     }
   }
 
