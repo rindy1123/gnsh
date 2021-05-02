@@ -26,26 +26,32 @@ main(int argc, char *argv[])
         continue;
 
       char *bin_path = (char *)malloc(strlen(line) + strlen(BIN_PATH) + 1);
+      char **command_arg = NULL;
       sprintf(bin_path, "%s/%s", BIN_PATH, line);
       if (access(bin_path, X_OK) == 0)
-        fprintf(out, "%s\n", bin_path);
-      else
       {
-        char *usr_bin_path = (char *)malloc(strlen(line) + strlen(USR_BIN_PATH) + 1);
-        sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, line);
-        if (access(usr_bin_path, X_OK) == 0)
-          fprintf(out, "%s\n", usr_bin_path);
-        else
-        {
-          if (strcmp(line, "exit") == 0)
-          {
-            free(usr_bin_path);
-            return 0;
-          }
-          fprintf(stderr, "gnsh: Unknown command: %s\n", line);
-        }
-        free(usr_bin_path);
+        execv(bin_path, command_arg);
+        fprintf(out, "%s\n", bin_path);
+        free(bin_path);
+        continue;
       }
+      char *usr_bin_path = (char *)malloc(strlen(line) + strlen(USR_BIN_PATH) + 1);
+      sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, line);
+      if (access(usr_bin_path, X_OK) == 0)
+      {
+        fprintf(out, "%s\n", usr_bin_path);
+        free(bin_path);
+        free(usr_bin_path);
+        continue;
+      }
+      if (strcmp(line, "exit") == 0)
+      {
+        free(usr_bin_path);
+        free(bin_path);
+        return 0;
+      }
+      fprintf(stderr, "gnsh: Unknown command: %s\n", line);
+      free(usr_bin_path);
       free(bin_path);
     }
   }
