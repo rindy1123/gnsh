@@ -43,12 +43,13 @@ int main(int argc, char *argv[])
 {
   FILE *in;
   FILE *out;
+  char *line;
+  size_t linecap = 0;
   if (argc == 1)
   {
+    // interactive mode
     in = stdin;
     out = stdout;
-    char *line;
-    size_t linecap = 0;
     while (1)
     {
       fprintf(out, "gnsh> ");
@@ -83,6 +84,45 @@ int main(int argc, char *argv[])
         return 0;
       fprintf(stderr, "gnsh: Unknown command: %s\n", command);
     }
+  }
+  else if (argc == 2)
+  {
+    // batch mode
+    in = fopen(argv[1], "r");
+    while (getline(&line, &linecap, in) != -1)
+    {
+      // remove new line char
+      line[strcspn(line, "\n")] = 0;
+      char **command_args = createArgs(line);
+      char *command = strdup(command_args[0]);
+
+      char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
+      sprintf(bin_path, "%s/%s", BIN_PATH, command);
+      if (access(bin_path, X_OK) == 0)
+      {
+        // /bin
+        execCommand(bin_path, command_args);
+        free(bin_path);
+        continue;
+      }
+      free(bin_path);
+      char *usr_bin_path = (char *)malloc(strlen(command) + strlen(USR_BIN_PATH) + 1);
+      sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, command);
+      if (access(usr_bin_path, X_OK) == 0)
+      {
+        // /usr/bin
+        execCommand(usr_bin_path, command_args);
+        free(usr_bin_path);
+        continue;
+      }
+      free(usr_bin_path);
+      fprintf(stderr, "gnsh: Unknown command: %s\n", command);
+    }
+  }
+  else
+  {
+    fprintf(stderr, "Only one input file is supported");
+    exit(1);
   }
 
   return 0;
