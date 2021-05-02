@@ -4,6 +4,7 @@
 #include <unistd.h>
 #define BIN_PATH "/bin"
 #define USR_BIN_PATH "/usr/bin"
+#define BUFF 50
 
 int
 main(int argc, char *argv[])
@@ -26,15 +27,17 @@ main(int argc, char *argv[])
         continue;
 
       char *command;
-      command = line;
+      char *temp_string = NULL;
+      char *separated_string = strdup(line);
+      char **command_args = (char **)malloc(BUFF * sizeof(char *));
+      for (int i = 0; (temp_string = strsep(&separated_string, " \t")) != NULL; i++)
+        command_args[i] = temp_string;
+      command = strdup(command_args[0]);
+      free(temp_string);
+      free(separated_string);
 
       char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
       sprintf(bin_path, "%s/%s", BIN_PATH, command);
-      char **command_args = (char **)malloc((strlen(bin_path) + 30) * sizeof(char *));
-      // char *command_args[3] = {bin_path, "-a", NULL};
-      command_args[0] = bin_path;
-      command_args[1] = "-a";
-      command_args[2] = NULL;
       if (access(bin_path, X_OK) == 0)
       {
         pid_t pid = fork();
@@ -54,7 +57,6 @@ main(int argc, char *argv[])
         else
         {
           waitpid(pid, NULL, 0);
-          fprintf(out, "%s\n", bin_path);
           free(bin_path);
           continue;
         }
