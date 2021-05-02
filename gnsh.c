@@ -39,6 +39,35 @@ void execCommand(char *path, char **command_args)
   }
 }
 
+/*
+  return value == 0: succeeded
+  return value == -1: failed
+*/
+int handleInput(char *command, char **command_args)
+{
+  char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
+  sprintf(bin_path, "%s/%s", BIN_PATH, command);
+  if (access(bin_path, X_OK) == 0)
+  {
+    // /bin
+    execCommand(bin_path, command_args);
+    free(bin_path);
+    return 0;
+  }
+  free(bin_path);
+  char *usr_bin_path = (char *)malloc(strlen(command) + strlen(USR_BIN_PATH) + 1);
+  sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, command);
+  if (access(usr_bin_path, X_OK) == 0)
+  {
+    // /usr/bin
+    execCommand(usr_bin_path, command_args);
+    free(usr_bin_path);
+    return 0;
+  }
+  free(usr_bin_path);
+  return -1;
+}
+
 void warnUnknownCommand(char *command)
 {
   fprintf(stderr, "gnsh: Unknown command: %s\n", command);
@@ -66,28 +95,14 @@ int main(int argc, char *argv[])
 
       char **command_args = createArgs(line);
       char *command = strdup(command_args[0]);
-
-      char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
-      sprintf(bin_path, "%s/%s", BIN_PATH, command);
-      if (access(bin_path, X_OK) == 0)
-      {
-        execCommand(bin_path, command_args);
-        free(bin_path);
-        continue;
-      }
-      free(bin_path);
-      char *usr_bin_path = (char *)malloc(strlen(command) + strlen(USR_BIN_PATH) + 1);
-      sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, command);
-      if (access(usr_bin_path, X_OK) == 0)
-      {
-        execCommand(usr_bin_path, command_args);
-        free(usr_bin_path);
-        continue;
-      }
-      free(usr_bin_path);
       if (strcmp(command, "exit") == 0)
         return 0;
-      warnUnknownCommand(command);
+
+      int result = handleInput(command, command_args);
+      if (result == 0)
+        continue;
+      else
+        warnUnknownCommand(command);
     }
   }
   else if (argc == 2)
@@ -98,30 +113,16 @@ int main(int argc, char *argv[])
     {
       // remove new line char
       line[strcspn(line, "\n")] = 0;
+      if (strcmp(line, "\0") == 0)
+        continue;
       char **command_args = createArgs(line);
       char *command = strdup(command_args[0]);
 
-      char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
-      sprintf(bin_path, "%s/%s", BIN_PATH, command);
-      if (access(bin_path, X_OK) == 0)
-      {
-        // /bin
-        execCommand(bin_path, command_args);
-        free(bin_path);
+      int result = handleInput(command, command_args);
+      if (result == 0)
         continue;
-      }
-      free(bin_path);
-      char *usr_bin_path = (char *)malloc(strlen(command) + strlen(USR_BIN_PATH) + 1);
-      sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, command);
-      if (access(usr_bin_path, X_OK) == 0)
-      {
-        // /usr/bin
-        execCommand(usr_bin_path, command_args);
-        free(usr_bin_path);
-        continue;
-      }
-      free(usr_bin_path);
-      warnUnknownCommand(command);
+      else
+        warnUnknownCommand(command);
     }
   }
   else
