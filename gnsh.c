@@ -43,28 +43,22 @@ void execCommand(char *path, char **command_args)
   return value == 0: succeeded
   return value == -1: failed
 */
-int handleInput(char *command, char **command_args)
+int handleInput(char *command, char **command_args, PathList *path_list_head)
 {
-  char *bin_path = (char *)malloc(strlen(command) + strlen(BIN_PATH) + 1);
-  sprintf(bin_path, "%s/%s", BIN_PATH, command);
-  if (access(bin_path, X_OK) == 0)
+  PathList *path_list = path_list_head;
+  while (path_list != NULL)
   {
-    // /bin
-    execCommand(bin_path, command_args);
+    char *bin_path = (char *)malloc(strlen(command) + strlen(path_list->path) + 1);
+    sprintf(bin_path, "%s/%s", path_list->path, command);
+    if (access(bin_path, X_OK) == 0)
+    {
+      execCommand(bin_path, command_args);
+      free(bin_path);
+      return 0;
+    }
     free(bin_path);
-    return 0;
+    path_list = path_list->next;
   }
-  free(bin_path);
-  char *usr_bin_path = (char *)malloc(strlen(command) + strlen(USR_BIN_PATH) + 1);
-  sprintf(usr_bin_path, "%s/%s", USR_BIN_PATH, command);
-  if (access(usr_bin_path, X_OK) == 0)
-  {
-    // /usr/bin
-    execCommand(usr_bin_path, command_args);
-    free(usr_bin_path);
-    return 0;
-  }
-  free(usr_bin_path);
   return -1;
 }
 
@@ -159,7 +153,7 @@ int main(int argc, char *argv[])
         continue;
       }
 
-      int result = handleInput(command, command_args);
+      int result = handleInput(command, command_args, path_list_head);
       if (result == 0)
         continue;
       else
@@ -179,7 +173,7 @@ int main(int argc, char *argv[])
       char **command_args = createArgs(line);
       char *command = strdup(command_args[0]);
 
-      int result = handleInput(command, command_args);
+      int result = handleInput(command, command_args, path_list_head);
       if (result == 0)
         continue;
       else
