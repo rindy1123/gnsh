@@ -48,7 +48,7 @@ void warnUnknownCommand(char *command)
   return value == 0: succeeded
   return value == -1: failed
 */
-int handleInput(char *command, char **command_args, PathList *path_list_head)
+int handleDefaultCommand(char *command, char **command_args, PathList *path_list_head)
 {
   PathList *path_list = path_list_head;
   while (path_list != NULL)
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
       char *command = strdup(command_args[0]);
       if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
         continue;
-      if ((handleInput(command, command_args, path_list_head)) == 0)
+      if ((handleDefaultCommand(command, command_args, path_list_head)) == 0)
         continue;
       else
         warnUnknownCommand(command);
@@ -171,7 +171,9 @@ int main(int argc, char *argv[])
       char **command_args = createArgs(line);
       char *command = strdup(command_args[0]);
 
-      if ((handleInput(command, command_args, path_list_head)) == 0)
+      if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
+        continue;
+      if ((handleDefaultCommand(command, command_args, path_list_head)) == 0)
         continue;
       else
         warnUnknownCommand(command);

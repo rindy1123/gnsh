@@ -6,5 +6,5 @@
 char **createArgs(char *line);
 void execCommand(char *path, char **command_args);
 void warnUnknownCommand(char *command);
-int handleInput(char *command, char **command_args, PathList *path_list_head);
+int handleDefaultCommand(char *command, char **command_args, PathList *path_list_head);
 int handleBuiltIn(char *command, char **command_args, PathList **path_list_head);
