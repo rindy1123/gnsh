@@ -73,15 +73,21 @@ void warnUnknownCommand(char *command)
   fprintf(stderr, "gnsh: Unknown command: %s\n", command);
 }
 
+PathList *initializePathList(void)
+{
+  PathList *path_list = malloc(sizeof(PathList));
+  path_list->path = BIN_PATH;
+  path_list->next = NULL;
+  return path_list;
+}
+
 int main(int argc, char *argv[])
 {
   FILE *in;
   FILE *out;
   char *line;
   size_t linecap = 0;
-  PathList *path_list = malloc(sizeof(PathList));
-  path_list->path = BIN_PATH;
-  path_list->next = NULL;
+  PathList *path_list_head = initializePathList();
   if (argc == 1)
   {
     // interactive mode
@@ -122,7 +128,34 @@ int main(int argc, char *argv[])
       }
       else if (strcmp(command, "path") == 0)
       {
-        printf("%s\n", path_list->path);
+        if (command_args[1] == NULL)
+        {
+          // reset paths
+          PathList *temp_path_list = malloc(sizeof(PathList));
+          while (path_list_head != NULL)
+          {
+            temp_path_list = path_list_head->next;
+            free(path_list_head);
+            path_list_head = temp_path_list;
+          }
+          free(temp_path_list);
+        }
+        else
+        {
+          // add paths
+          for (int i = 1; command_args[i] != NULL; i++)
+          {
+            PathList *next_path_list = malloc(sizeof(PathList));
+            if (next_path_list == NULL)
+            {
+              fprintf(stderr, "malloc failed\n");
+              exit(EXIT_FAILURE);
+            }
+            next_path_list->path = strdup(command_args[i]);
+            next_path_list->next = path_list_head;
+            path_list_head = next_path_list;
+          }
+        }
         continue;
       }
 
