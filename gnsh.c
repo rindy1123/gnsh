@@ -19,7 +19,7 @@ createArgs(char *line, int *args_num)
   return command_args;
 }
 
-void execCommand(char *path, char **command_args)
+void execCommand(char *path, char **command_args, int args_num)
 {
   pid_t pid = fork();
   if (pid < 0)
@@ -29,11 +29,22 @@ void execCommand(char *path, char **command_args)
   }
   else if (pid == 0)
   {
+    FILE *out = stdout;
+    if (args_num > 2 && strcmp(command_args[args_num - 2], ">") == 0)
+    {
+      if ((out = fopen(command_args[args_num - 1], "w")) == NULL)
+        out = stdout;
+      command_args[args_num - 1] = NULL;
+      command_args[args_num - 2] = NULL;
+    }
+    dup2(fileno(out), STDOUT_FILENO);
+    dup2(fileno(out), STDERR_FILENO);
     if (execv(path, command_args) == -1)
     {
       fprintf(stderr, "error occured\n");
       exit(1);
     }
+    fclose(out);
   }
   else
   {
@@ -50,7 +61,7 @@ void warnUnknownCommand(char *command)
   return value == 0: succeeded
   return value == -1: failed
 */
-int handleDefaultCommand(char *command, char **command_args, PathList *path_list_head)
+int handleDefaultCommand(char *command, char **command_args, PathList *path_list_head, int args_num)
 {
   PathList *path_list = path_list_head;
   while (path_list != NULL)
@@ -59,7 +70,7 @@ int handleDefaultCommand(char *command, char **command_args, PathList *path_list
     sprintf(bin_path, "%s/%s", path_list->path, command);
     if (access(bin_path, X_OK) == 0)
     {
-      execCommand(bin_path, command_args);
+      execCommand(bin_path, command_args, args_num);
       free(bin_path);
       return 0;
     }
@@ -155,7 +166,7 @@ int main(int argc, char *argv[])
       char *command = strdup(command_args[0]);
       if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
         continue;
-      if ((handleDefaultCommand(command, command_args, path_list_head)) == 0)
+      if ((handleDefaultCommand(command, command_args, path_list_head, *args_num)) == 0)
         continue;
       warnUnknownCommand(command);
     }
@@ -177,10 +188,11 @@ int main(int argc, char *argv[])
 
       if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
         continue;
-      if ((handleDefaultCommand(command, command_args, path_list_head)) == 0)
+      if ((handleDefaultCommand(command, command_args, path_list_head, *args_num)) == 0)
         continue;
       warnUnknownCommand(command);
     }
+    fclose(in);
   }
   else
   {
