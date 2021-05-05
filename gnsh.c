@@ -79,6 +79,9 @@ int main(int argc, char *argv[])
   FILE *out;
   char *line;
   size_t linecap = 0;
+  PathList *path_list = malloc(sizeof(PathList));
+  path_list->path = BIN_PATH;
+  path_list->next = NULL;
   if (argc == 1)
   {
     // interactive mode
@@ -115,6 +118,11 @@ int main(int argc, char *argv[])
           fprintf(stderr, "cd: The directory '%s' does not exist\n", command_args[1]);
           continue;
         }
+        continue;
+      }
+      else if (strcmp(command, "path") == 0)
+      {
+        printf("%s\n", path_list->path);
         continue;
       }
 
