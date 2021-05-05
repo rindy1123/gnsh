@@ -5,13 +5,15 @@
 #include "gnsh.h"
 
 char **
-createArgs(char *line)
+createArgs(char *line, int *args_num)
 {
   char *temp_string = NULL;
   char *separated_string = strdup(line);
   char **command_args = (char **)malloc(BUFF * sizeof(char *));
-  for (int i = 0; (temp_string = strsep(&separated_string, " \t")) != NULL; i++)
+  int i;
+  for (i = 0; (temp_string = strsep(&separated_string, " \t")) != NULL; i++)
     command_args[i] = temp_string;
+  *args_num = i;
   free(temp_string);
   free(separated_string);
   return command_args;
@@ -148,14 +150,14 @@ int main(int argc, char *argv[])
       if (strcmp(line, "\0") == 0)
         continue;
 
-      char **command_args = createArgs(line);
+      int *args_num = (int *)malloc(sizeof(int *));
+      char **command_args = createArgs(line, args_num);
       char *command = strdup(command_args[0]);
       if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
         continue;
       if ((handleDefaultCommand(command, command_args, path_list_head)) == 0)
         continue;
-      else
-        warnUnknownCommand(command);
+      warnUnknownCommand(command);
     }
   }
   else if (argc == 2)
@@ -168,15 +170,16 @@ int main(int argc, char *argv[])
       line[strcspn(line, "\n")] = 0;
       if (strcmp(line, "\0") == 0)
         continue;
-      char **command_args = createArgs(line);
+
+      int *args_num = (int *)malloc(sizeof(int *));
+      char **command_args = createArgs(line, args_num);
       char *command = strdup(command_args[0]);
 
       if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
         continue;
       if ((handleDefaultCommand(command, command_args, path_list_head)) == 0)
         continue;
-      else
-        warnUnknownCommand(command);
+      warnUnknownCommand(command);
     }
   }
   else
