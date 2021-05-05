@@ -142,63 +142,51 @@ PathList *initializePathList(void)
 
 int main(int argc, char *argv[])
 {
-  FILE *in;
-  FILE *out;
+  FILE *in = NULL;
   char *line;
   size_t linecap = 0;
+  ssize_t input_char_num;
   PathList *path_list_head = initializePathList();
-  if (argc == 1)
-  {
-    // interactive mode
-    in = stdin;
-    out = stdout;
-    while (1)
-    {
-      fprintf(out, "gnsh> ");
-      getline(&line, &linecap, in);
-      // remove new line char
-      line[strcspn(line, "\n")] = 0;
-      if (strcmp(line, "\0") == 0)
-        continue;
-
-      int *args_num = (int *)malloc(sizeof(int *));
-      char **command_args = createArgs(line, args_num);
-      char *command = strdup(command_args[0]);
-      if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
-        continue;
-      if ((handleDefaultCommand(command, command_args, path_list_head, *args_num)) == 0)
-        continue;
-      warnUnknownCommand(command);
-    }
-  }
-  else if (argc == 2)
-  {
-    // batch mode
-    in = fopen(argv[1], "r");
-    while (getline(&line, &linecap, in) != -1)
-    {
-      // remove new line char
-      line[strcspn(line, "\n")] = 0;
-      if (strcmp(line, "\0") == 0)
-        continue;
-
-      int *args_num = (int *)malloc(sizeof(int *));
-      char **command_args = createArgs(line, args_num);
-      char *command = strdup(command_args[0]);
-
-      if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
-        continue;
-      if ((handleDefaultCommand(command, command_args, path_list_head, *args_num)) == 0)
-        continue;
-      warnUnknownCommand(command);
-    }
-    fclose(in);
-  }
-  else
+  if (argc > 2)
   {
     fprintf(stderr, "Only one input file is supported");
     exit(1);
   }
 
+  // interactive mode
+  if (argc == 1)
+    in = stdin;
+  // batch mode
+  else if (argc == 2)
+    if ((in = fopen(argv[1], "r")) == NULL)
+    {
+      fprintf(stderr, "There is no such file");
+      exit(EXIT_FAILURE);
+    }
+
+  while (1)
+  {
+    if (argc == 1)
+      printf("gnsh> ");
+    input_char_num = getline(&line, &linecap, in);
+    if (input_char_num == -1)
+    {
+      fclose(in);
+      exit(EXIT_SUCCESS);
+    }
+    // remove new line char
+    line[input_char_num - 1] = 0;
+    if (strcmp(line, "\0") == 0)
+      continue;
+
+    int *args_num = (int *)malloc(sizeof(int *));
+    char **command_args = createArgs(line, args_num);
+    char *command = strdup(command_args[0]);
+    if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
+      continue;
+    if ((handleDefaultCommand(command, command_args, path_list_head, *args_num)) == 0)
+      continue;
+    warnUnknownCommand(command);
+  }
   return 0;
 }
