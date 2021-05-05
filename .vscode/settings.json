@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    ".*lintrc": "json",
+    "*.html": "html",
+    "string.h": "c",
+    "stdio.h": "c"
+  }
+}
