@@ -39,6 +39,11 @@ void execCommand(char *path, char **command_args)
   }
 }
 
+void warnUnknownCommand(char *command)
+{
+  fprintf(stderr, "gnsh: Unknown command: %s\n", command);
+}
+
 /*
   return value == 0: succeeded
   return value == -1: failed
@@ -62,9 +67,56 @@ int handleInput(char *command, char **command_args, PathList *path_list_head)
   return -1;
 }
 
-void warnUnknownCommand(char *command)
+/*
+  return value == 0: built-in command exists
+  return value == -1: built-in command does not exist
+*/
+int handleBuiltIn(char *command, char **command_args, PathList **path_list_head)
 {
-  fprintf(stderr, "gnsh: Unknown command: %s\n", command);
+  if (strcmp(command, "exit") == 0)
+    exit(EXIT_SUCCESS);
+  else if (strcmp(command, "cd") == 0)
+  {
+    if (command_args[2] != NULL)
+      fprintf(stderr, "Too many args for cd command\n");
+    else if (command_args[1] == NULL)
+      fprintf(stderr, "Specify a path to the directory\n");
+    else if (chdir(command_args[1]) == -1)
+      fprintf(stderr, "cd: The directory '%s' does not exist\n", command_args[1]);
+    return 0;
+  }
+  else if (strcmp(command, "path") == 0)
+  {
+    if (command_args[1] == NULL)
+    {
+      // reset paths
+      PathList *temp_path_list = malloc(sizeof(PathList));
+      while (*path_list_head != NULL)
+      {
+        temp_path_list = *path_list_head;
+        *path_list_head = temp_path_list->next;
+      }
+      free(temp_path_list);
+    }
+    else
+    {
+      // add paths
+      for (int i = 1; command_args[i] != NULL; i++)
+      {
+        PathList *next_path_list = malloc(sizeof(PathList));
+        if (next_path_list == NULL)
+        {
+          fprintf(stderr, "malloc failed\n");
+          exit(EXIT_FAILURE);
+        }
+        next_path_list->path = strdup(command_args[i]);
+        next_path_list->next = *path_list_head;
+        *path_list_head = next_path_list;
+      }
+    }
+    return 0;
+  }
+  return -1;
 }
 
 PathList *initializePathList(void)
@@ -98,63 +150,9 @@ int main(int argc, char *argv[])
 
       char **command_args = createArgs(line);
       char *command = strdup(command_args[0]);
-      // built-in commands
-      if (strcmp(command, "exit") == 0)
-        return 0;
-      else if (strcmp(command, "cd") == 0)
-      {
-        if (command_args[2] != NULL)
-        {
-          fprintf(stderr, "Too many args for cd command\n");
-          continue;
-        }
-        else if (command_args[1] == NULL)
-        {
-          fprintf(stderr, "Specify a path to the directory\n");
-          continue;
-        }
-        if (chdir(command_args[1]) == -1)
-        {
-          fprintf(stderr, "cd: The directory '%s' does not exist\n", command_args[1]);
-          continue;
-        }
+      if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
         continue;
-      }
-      else if (strcmp(command, "path") == 0)
-      {
-        if (command_args[1] == NULL)
-        {
-          // reset paths
-          PathList *temp_path_list = malloc(sizeof(PathList));
-          while (path_list_head != NULL)
-          {
-            temp_path_list = path_list_head->next;
-            free(path_list_head);
-            path_list_head = temp_path_list;
-          }
-          free(temp_path_list);
-        }
-        else
-        {
-          // add paths
-          for (int i = 1; command_args[i] != NULL; i++)
-          {
-            PathList *next_path_list = malloc(sizeof(PathList));
-            if (next_path_list == NULL)
-            {
-              fprintf(stderr, "malloc failed\n");
-              exit(EXIT_FAILURE);
-            }
-            next_path_list->path = strdup(command_args[i]);
-            next_path_list->next = path_list_head;
-            path_list_head = next_path_list;
-          }
-        }
-        continue;
-      }
-
-      int result = handleInput(command, command_args, path_list_head);
-      if (result == 0)
+      if ((handleInput(command, command_args, path_list_head)) == 0)
         continue;
       else
         warnUnknownCommand(command);
@@ -173,8 +171,7 @@ int main(int argc, char *argv[])
       char **command_args = createArgs(line);
       char *command = strdup(command_args[0]);
 
-      int result = handleInput(command, command_args, path_list_head);
-      if (result == 0)
+      if ((handleInput(command, command_args, path_list_head)) == 0)
         continue;
       else
         warnUnknownCommand(command);
