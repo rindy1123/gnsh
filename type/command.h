@@ -1,5 +1,5 @@
 #include <pthread.h>
-struct command {
+typedef struct command {
   pthread_t thread;
   char *command;
-};
+} Command;

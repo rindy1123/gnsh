@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "gnsh.h"
+PathList *path_list_head;
 
 char **
 createArgs(char *line, int *args_num)
@@ -140,13 +141,27 @@ PathList *initializePathList(void)
   return path_list;
 }
 
+void *handleCommand(void *arg)
+{
+  Command *command_struct = (Command *)arg;
+  int *args_num = (int *)malloc(sizeof(int *));
+  char **command_args = createArgs(command_struct->command, args_num);
+  char *command = strdup(command_args[0]);
+  if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
+    return NULL;
+  if ((handleDefaultCommand(command, command_args, path_list_head, *args_num)) == 0)
+    return NULL;
+  warnUnknownCommand(command);
+  return NULL;
+}
+
 int main(int argc, char *argv[])
 {
   FILE *in = NULL;
   char *line;
   size_t linecap = 0;
   ssize_t input_char_num;
-  PathList *path_list_head = initializePathList();
+  path_list_head = initializePathList();
   if (argc > 2)
   {
     fprintf(stderr, "Only one input file is supported");
@@ -179,14 +194,18 @@ int main(int argc, char *argv[])
     if (strcmp(line, "\0") == 0)
       continue;
 
-    int *args_num = (int *)malloc(sizeof(int *));
-    char **command_args = createArgs(line, args_num);
-    char *command = strdup(command_args[0]);
-    if ((handleBuiltIn(command, command_args, &path_list_head)) == 0)
-      continue;
-    if ((handleDefaultCommand(command, command_args, path_list_head, *args_num)) == 0)
-      continue;
-    warnUnknownCommand(command);
+    char *temp_line = strdup(line);
+    Command *commands = (Command *)malloc(BUFF * sizeof(Command *));
+    char *temp_command;
+    int command_num;
+    for (command_num = 0; (temp_command = strsep(&temp_line, "&")) != NULL; command_num++)
+    {
+      if (temp_command[0] == '\0')
+        break;
+      commands[command_num].command = strdup(temp_command);
+    }
+    for (int i = 0; i < command_num; i++)
+      pthread_create(&commands[i].thread, NULL, &handleCommand, &commands[i]);
   }
   return 0;
 }

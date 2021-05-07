@@ -9,3 +9,4 @@ void execCommand(char *path, char **command_args, int args_num);
 void warnUnknownCommand(char *command);
 int handleDefaultCommand(char *command, char **command_args, PathList *path_list_head, int args_num);
 int handleBuiltIn(char *command, char **command_args, PathList **path_list_head);
+void *handleCommand(void *arg);
