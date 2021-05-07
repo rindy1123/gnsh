@@ -1,4 +1,5 @@
 #include "type/pathlist.h"
+#include "type/command.h"
 #define BUFF 50
 #define BIN_PATH "/bin"
 #define USR_BIN_PATH "/usr/bin"
