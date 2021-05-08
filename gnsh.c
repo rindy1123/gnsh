@@ -155,6 +155,18 @@ void *handleCommand(void *arg)
   return NULL;
 }
 
+char *trimCommand(char *command)
+{
+  char *trimmed_command = strdup(command);
+  // remove spaces after a command
+  for (int i = strlen(trimmed_command) - 1; trimmed_command[i] == ' ' || trimmed_command[i] == '\n'; i--)
+    trimmed_command[i] = 0;
+  // remove spaces before a command
+  while (*trimmed_command == ' ')
+    trimmed_command++;
+  return trimmed_command;
+}
+
 int main(int argc, char *argv[])
 {
   FILE *in = NULL;
@@ -189,8 +201,6 @@ int main(int argc, char *argv[])
       fclose(in);
       exit(EXIT_SUCCESS);
     }
-    // remove new line char
-    line[input_char_num - 1] = 0;
     if (strcmp(line, "\0") == 0)
       continue;
 
@@ -200,12 +210,14 @@ int main(int argc, char *argv[])
     int command_num;
     for (command_num = 0; (temp_command = strsep(&temp_line, "&")) != NULL; command_num++)
     {
-      if (temp_command[0] == '\0')
-        break;
-      commands[command_num].command = strdup(temp_command);
+      char *trimmed_command = trimCommand(temp_command);
+      commands[command_num].command = strdup(trimmed_command);
     }
     for (int i = 0; i < command_num; i++)
       pthread_create(&commands[i].thread, NULL, &handleCommand, &commands[i]);
+    for (int i = 0; i < command_num; i++)
+      pthread_join(commands[i].thread, NULL);
+    free(commands);
   }
   return 0;
 }

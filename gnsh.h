@@ -10,3 +10,4 @@ void warnUnknownCommand(char *command);
 int handleDefaultCommand(char *command, char **command_args, PathList *path_list_head, int args_num);
 int handleBuiltIn(char *command, char **command_args, PathList **path_list_head);
 void *handleCommand(void *arg);
+char *trimCommand(char *commad);
